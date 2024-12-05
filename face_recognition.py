@@ -1,56 +1,36 @@
 import numpy as np
-import cv2
-import os
-import json
-from generate_coords import get_cords
 
-# funcka generująca średnie ( podoobna do funkcji z generate_means.py )
-def generate_mean(name, data_dir):
-    coordinates_list = get_cords()
-    image = cv2.cvtColor(cv2.imread(os.path.join(data_dir, name)), cv2.COLOR_BGR2GRAY)
+def find_face(first: dict, second: dict, m: int, threshold: float) -> bool:
+    """
+    Compare two dictionaries of means and determine whether it's the same face or not.
+    :param first: first dictionary of means
+    :param second: second dictionary of means
+    :param m: number of means
+    :param threshold: threshold for correlation coefficient
+    :return: boolean whether both of these dictionaries represent the same face
+    """
+    # Normalisation; mean and standard deviation of normalised data is respectively 0 and 1
+    # (in our case it is approximately 0 and 1)
+    first_v = list(first.values())
+    mean_f = np.mean(first_v)
+    std_f = np.std(first_v)
+    if std_f:
+        normalised_f = (first_v - mean_f)/std_f
+    else:
+        normalised_f = np.zeros_like(first_v)
+    second_v = list(second.values())
+    mean_s = np.mean(second_v)
+    std_s = np.std(second_v)
+    if std_s:
+        normalised_s = (second_v - mean_s)/std_s
+    else:
+        normalised_s = np.zeros_like(second_v)
 
-    mean = {}
-    i = 1
-    for coordinates in coordinates_list:
-        mean[f"F_{i}"] = np.mean(image[coordinates[:, 0], coordinates[:, 1]])
-        i += 1
 
-    return mean
+    # Calculating correlation coefficient;
+    # rho = 1 perfect positive correlation, rho = 0 no correlation, rho = -1 perfect negative correlation (unlikely in face recognition)
+    rho = sum([i*j for i, j in zip(normalised_f, normalised_s)])/m
+    return rho >= threshold
 
-# funkcja porównująca średnie
-def compare_means(mean, data_dir):
 
-    comparison_results = {}
-    for json_file in os.listdir(data_dir):
-        if json_file.endswith('.json'): # iterujemy po plikach z rozszerzeniem json w jsn_data
-            with open(os.path.join(data_dir, json_file), 'r') as file:
-                json_data = json.load(file)
-                # tworzymy słownik z różnicami między średnimi między obrazem a plikiem json
-                for key in mean:
-                    if key in json_data:
-                        comparison_results[f"{json_file}_{key}"] = abs(mean[key] - json_data[key])
-                    else:
-                        comparison_results[f"{json_file}_{key}"] = None 
-   
-    return comparison_results
 
-# funkcja znajdująca twarz na podstawie róznic między średnimi
-def find_face(comparison_results):
-    faces = {} # lista przechowująca różnice między średnimi dla każdej twarzy
-    for key, value in comparison_results.items():
-        subject, feature = key.split('_F_') # rozdzielamy nazwę pliku i numer średniej różnicy
-        if subject not in faces:
-            faces[subject] = []
-        faces[subject].append(value)
-    
-    # sprawdzamy czy różnice są mniejsze niż 3 dla każdej średniej
-    for face, differences in faces.items():
-        if all(diff is not None and diff < 3 for diff in differences):
-            return face
-    return None
-
-if __name__ == '__main__':
-    
-    mean = generate_mean(name="subject06.png", data_dir=r"data")
-    comparison_results = compare_means(mean, data_dir=r"json_data")
-    print(find_face(comparison_results))
