@@ -25,13 +25,7 @@ def create_coordinate_list(dims: tuple, num_samples: int, m: int) -> list:
     :param m: number of arrays
     :return: List[(ndarray, ndarray)]; m arrays, each with n number of coordinates [(column indexes, row indexes)]
     """
-
     coordinates_list = [generate_random_coordinates(*dims, num_samples) for _ in range(m)]
-    coordinates_json = {}
-    i = 1
-    for coordinates in coordinates_list:
-        coordinates_json[f"F_{i}"] = coordinates
-        i += 1
 
     return coordinates_list
 
