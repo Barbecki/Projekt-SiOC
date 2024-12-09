@@ -41,8 +41,11 @@ def generate_means(data_dir, output_dir, coordinates_list) -> None:
         os.makedirs(output_dir)
 
     for name in os.listdir(data_dir):
-        if name.endswith(".png"):
-            image = cv2.cvtColor(cv2.imread(os.path.join(data_dir, name)), cv2.COLOR_BGR2GRAY)
+        if name.endswith(".gif"):
+            ret, image = cv2.VideoCapture(os.path.join(data_dir, name)).read()
+            if not ret:
+                raise AssertionError("Error with loading image.")
+            image = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
 
             means = {}
             i = 1
