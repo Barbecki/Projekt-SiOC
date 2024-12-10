@@ -35,3 +35,4 @@ if __name__ == '__main__':
     main(r"data", r"json_data", r"subject01_centerlight.gif", (243, 320),
          100, 100, 0.8)
     # TODO: Test for different number_of_samples, number_of_means, test_criteria
+    # Test, because I don't remember git at all
