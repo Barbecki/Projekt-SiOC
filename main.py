@@ -4,6 +4,7 @@ import cv2
 import csv
 from sklearn.metrics import roc_curve, roc_auc_score
 import matplotlib.pyplot as plt
+import scipy.stats as stats
 
 def generate_random_coordinates(h: int, w: int, n: int) -> tuple:
     """
@@ -65,12 +66,13 @@ def correlation_coefficient(first: np.ndarray, second: np.ndarray, m: int) -> fl
 
 
 if __name__ == '__main__':
+    DATA_DIR = 'data'
     NUMBER_OF_SAMPLES = 100
     NUMBER_OF_MEANS = 50
     CRDS = [generate_random_coordinates(*(243, 320), NUMBER_OF_SAMPLES) for _ in range(NUMBER_OF_MEANS)]
-    generate_means(r'data', CRDS)
+    generate_means(DATA_DIR, CRDS)
     data = np.loadtxt('data.csv', delimiter=';')
-    labels = [name for name in os.listdir(r'data') if name.endswith('.gif')]
+    labels = [name for name in os.listdir(DATA_DIR) if name.endswith('.gif')]
 
     # for each pair of images we create a list with ['Pair Name', 'Similarity Score (rho)', 'Ground Truth Match']
     pairs = [[f"{img1}-{img2}",
@@ -99,3 +101,19 @@ if __name__ == '__main__':
     plt.legend()
     plt.savefig('ROC_curve.png')
 
+    same = [pair[1] for pair in pairs if pair[2] == 1]
+    different = [pair[1] for pair in pairs if pair[2] == 0]
+
+    t_stat, p_value = stats.mannwhitneyu(same, different, alternative='greater', method='asymptotic')
+
+    print(f"Mann-Whitney Test; z: {t_stat}, p-value: {p_value}")
+
+    if p_value < 0.05:
+        print("Rejecting H0 - there is significant difference between the groups. -> H1")
+    else:
+        print("No reason to reject H0 - no significant difference between the groups. -> H0")
+
+    s1, s2 = stats.t.interval(0.95, df=len(same) - 1, loc=np.mean(same), scale=np.std(same, ddof=1) / np.sqrt(len(same)))
+    d1, d2 = stats.t.interval(0.95, df=len(different) - 1, loc=np.mean(different), scale=np.std(different, ddof=1) / np.sqrt(len(different)))
+    print(f"\nConfidence intervals:\nsame-person-pairs: {(float(s1), float(s2))}, mean: {np.mean(same)}\n"
+          f"different-person-pairs: {(float(d1), float(d2))}, mean: {np.mean(different)}")
