@@ -100,6 +100,7 @@ if __name__ == '__main__':
     plt.title(f'ROC Curve for Face Recognition')
     plt.legend()
     plt.savefig('ROC_curve.png')
+    plt.close()
 
     same = [pair[1] for pair in pairs if pair[2] == 1]
     different = [pair[1] for pair in pairs if pair[2] == 0]
@@ -117,3 +118,35 @@ if __name__ == '__main__':
     d1, d2 = stats.t.interval(0.95, df=len(different) - 1, loc=np.mean(different), scale=np.std(different, ddof=1) / np.sqrt(len(different)))
     print(f"\nConfidence intervals:\nsame-person-pairs: {(float(s1), float(s2))}, mean: {np.mean(same)}\n"
           f"different-person-pairs: {(float(d1), float(d2))}, mean: {np.mean(different)}")
+
+    plt.figure(figsize=(9,8))
+    plt.hist(same, bins=20, alpha=0.5, color='blue', label='Same-person pairs')
+    plt.hist(different, bins=20, alpha=0.5, color='red', label='Different-person pairs')
+    plt.xticks([i/10 for i in range(-10, 11)])
+    plt.yticks([i for i in range(0, 2000, 100)])
+    plt.grid(True)
+
+    plt.xlabel('Similarity Score (Correlation Coefficient)')
+    plt.ylabel('Frequency')
+    plt.title('Histogram of Similarity Scores - frequency')
+    plt.legend(loc='upper left')
+    plt.savefig('histograms.png')
+    plt.close()
+
+    plt.figure(figsize=(9,8))
+
+    same_counts, same_bins = np.histogram(same, bins=20)
+    same_heights = same_counts / same_counts.sum() * 100
+    diff_counts, diff_bins = np.histogram(different, bins=20)
+    diff_heights = diff_counts / diff_counts.sum() * 100
+    plt.bar(same_bins[:-1], same_heights, width=np.diff(same_bins), alpha=0.5, color='blue', label='Same-person pairs', align='edge')
+    plt.bar(diff_bins[:-1], diff_heights, width=np.diff(diff_bins), alpha=0.5, color='red', label='Different-person pairs', align='edge')
+    plt.yticks([i for i in range(0, 31, 2)], [f"{i}%" for i in range(0, 31, 2)])
+    plt.grid(True)
+
+    plt.xlabel('Similarity Score (Correlation Coefficient)')
+    plt.ylabel('Percentage')
+    plt.title('Histogram of Similarity Scores - percentage')
+    plt.legend(loc='upper left')
+    plt.savefig('histograms_percentage.png')
+    plt.close()
