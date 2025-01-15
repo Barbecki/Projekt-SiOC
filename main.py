@@ -6,6 +6,7 @@ import matplotlib.pyplot as plt
 from skimage.metrics import structural_similarity as ssim
 from skimage.feature import hog
 from skimage import exposure
+from sklearn.metrics import roc_curve, auc
 
 
 def save_magnitude_spectrum(image_path, output_path):
@@ -81,6 +82,48 @@ def compare_images_hog(image_path1, image_path2):
     similarity = np.corrcoef(hog_features1, hog_features2)[0, 1]
     return similarity
 
+def plot_roc_curve(similarity_scores_file, output_path):
+    """
+    Plot ROC curve based on similarity scores
+    :param similarity_scores_file: path to the CSV file with similarity scores
+    :param output_path: path to save the ROC curve plot
+    :return: None
+    """
+    # Read similarity scores from CSV
+    image_pairs = []
+    similarities = []
+    with open(similarity_scores_file, 'r') as csvfile:
+        csv_reader = csv.reader(csvfile)
+        next(csv_reader)  # Skip header
+        for row in csv_reader:
+            image_pairs.append((row[0], row[1]))
+            similarities.append(float(row[2]))
+
+    # Generate labels (1 for same subject, 0 for different subjects)
+    labels = []
+    for img1, img2 in image_pairs:
+        if img1.split('_')[0] == img2.split('_')[0]:
+            labels.append(1)
+        else:
+            labels.append(0)
+
+    # Calculate ROC curve
+    fpr, tpr, _ = roc_curve(labels, similarities)
+    roc_auc = auc(fpr, tpr)
+
+    # Plot ROC curve
+    plt.figure()
+    plt.plot(fpr, tpr, color='darkorange', lw=2, label=f'ROC curve (area = {roc_auc:.2f})')
+    plt.plot([0, 1], [0, 1], color='navy', lw=2, linestyle='--')
+    plt.xlim([0.0, 1.0])
+    plt.ylim([0.0, 1.05])
+    plt.xlabel('False Positive Rate')
+    plt.ylabel('True Positive Rate')
+    plt.title('Receiver Operating Characteristic')
+    plt.legend(loc='lower right')
+    plt.savefig(output_path)
+    plt.close()
+
 if __name__ == '__main__':
     DATA_DIR = 'data'
     OUTPUT_DIR = 'magnitude_spec'
@@ -97,15 +140,19 @@ if __name__ == '__main__':
         save_magnitude_spectrum(image_path, output_path)
     
     # Compare each image with every other image and save results to CSV using HOG
-    with open('similarity_scores_hog.csv', 'w', newline='') as csvfile:
-        csv_writer = csv.writer(csvfile)
-        csv_writer.writerow(['Image1', 'Image2', 'Similarity'])
-        
-        for i in range(len(labels)):
-            for j in range(i + 1, len(labels)):
-                image_path1 = os.path.join(DATA_DIR, labels[i])
-                image_path2 = os.path.join(DATA_DIR, labels[j])
-                similarity_score = compare_images_hog(image_path1, image_path2)
-                csv_writer.writerow([labels[i], labels[j], similarity_score])
+    similarity_scores_file = 'similarity_scores_hog.csv'
+    #with open(similarity_scores_file, 'w', newline='') as csvfile:
+    #    csv_writer = csv.writer(csvfile)
+    #    csv_writer.writerow(['Image1', 'Image2', 'Similarity'])
+    #    
+    #    for i in range(len(labels)):
+    #        for j in range(i + 1, len(labels)):
+    #            image_path1 = os.path.join(DATA_DIR, labels[i])
+    #            image_path2 = os.path.join(DATA_DIR, labels[j])
+    #            similarity_score = compare_images_hog(image_path1, image_path2)
+    #            csv_writer.writerow([labels[i], labels[j], similarity_score])
+    
+    # Plot ROC curve
+    plot_roc_curve(similarity_scores_file, 'roc_curve_hog.png')
 
 
