@@ -14,6 +14,9 @@ def generate_random_coordinates(h: int, w: int, n: int) -> tuple:
     :param n: number of random coordinates to generate
     :return: (ndarray, ndarray); generated coordinates (row index, column index)
     """
+
+    h = h // 2
+    w = w // 2
     _rand = np.random.default_rng().choice(w * h, size=n, replace=False)
     y_random = _rand // w
     x_random = _rand % w
@@ -33,6 +36,11 @@ def generate_means(data_dir, coordinates_list) -> None:
                 if not ret:
                     raise AssertionError("Error with loading image.")
                 image = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
+
+                # Discrete Cosine Transform
+                dct = cv2.dct(np.float32(image))
+                h, w = dct.shape[:2]
+                image = dct[:h // 2, :w // 2]
 
                 means = []
                 for coordinates in coordinates_list:
