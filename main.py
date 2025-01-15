@@ -24,7 +24,7 @@ def generate_random_coordinates(h: int, w: int, n: int) -> tuple:
 
 def generate_means(data_dir, coordinates_list) -> None:
     """
-    Generating means of values from data from coordinates and saving them in json file
+    Generating means of values from DCT of data from coordinates and saving them in json file
     :param data_dir: path to directory with data (grayscale images with .png extension)
     :param coordinates_list: list of lists of coordinates to calculate means from
     :return: None
